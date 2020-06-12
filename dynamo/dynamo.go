@@ -144,10 +144,10 @@ func PatchRawDynamoSuccess(session *dyn.DynamoDB, cfs CFS, locationRecord Locati
 		},
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":aa": {
-				S: aws.String(locationRecord.LatLong.Lat),
+				N: aws.String(locationRecord.LatLong.Lat),
 			},
 			":ab": {
-				S: aws.String(locationRecord.LatLong.Lng),
+				N: aws.String(locationRecord.LatLong.Lng),
 			},
 			":b": {
 				S: aws.String(locationRecord.Ward),
