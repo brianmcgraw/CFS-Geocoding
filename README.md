@@ -1,1 +1,1 @@
-# CFS-Geocoding
+Note: This project is mostly optimized for keeping costs as low as possible while learning some of what is available in AWS.

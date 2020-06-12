@@ -1,0 +1,1 @@
+docker run --net=host --env-file ./env.list cfs-geocode
