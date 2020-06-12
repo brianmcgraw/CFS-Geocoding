@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/brianmcgraw/CFS-Geocoding/dynamo"
@@ -45,8 +46,8 @@ type MapsGeometry struct {
 }
 
 type GoogleLatLong struct {
-	Lat float32 `json:"lat"`
-	Lng float32 `json:"lng"`
+	Lat float64 `json:"lat"`
+	Lng float64 `json:"lng"`
 }
 
 func NewClient() MapsConfig {
@@ -116,8 +117,11 @@ func CallMaps(mapsConfig MapsConfig, raw dynamo.CFS) (improved dynamo.CFS, err e
 
 	}
 
-	improved.LatLong.Lat = mapsResponse.Results[0].Geometry.Location.Lat
-	improved.LatLong.Lng = mapsResponse.Results[0].Geometry.Location.Lng
+	latFloat := strconv.FormatFloat(mapsResponse.Results[0].Geometry.Location.Lat, 'f', 3, 32)
+	lngFloat := strconv.FormatFloat(mapsResponse.Results[0].Geometry.Location.Lng, 'f', 3, 32)
+
+	improved.LatLong.Lat = latFloat
+	improved.LatLong.Lng = lngFloat
 
 	return improved, err
 
