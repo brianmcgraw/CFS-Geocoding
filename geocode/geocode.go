@@ -41,7 +41,12 @@ type AddressComponent struct {
 }
 
 type MapsGeometry struct {
-	Location dynamo.LatLong `json:"location"`
+	Location GoogleLatLong `json:"location"`
+}
+
+type GoogleLatLong struct {
+	Lat float32 `json:"lat"`
+	Lng float32 `json:"lng"`
 }
 
 func NewClient() MapsConfig {
