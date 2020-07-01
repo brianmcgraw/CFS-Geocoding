@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	BaseDataTable          = "cfs-neww"
+	BaseDataTable          = "cfs-new"
 	FixedLocationDataTable = "cfs-location-fixed"
 )
 
