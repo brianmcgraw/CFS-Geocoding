@@ -31,20 +31,22 @@ type AddressComponent struct {
 }
 
 func main() {
+	log.Println("Running CFS-Geocode...")
 	config := config.New()
 
 	// 1. Pull all incomplete values from the raw CFS table in dynamo.
-	cfs, err := dynamo.QueryIncompleteCFS(config.DynDB)
+	cfs, err := dynamo.QueryIncompleteCFS(config.DynDB) // This should return a complete record, but we're only interested in the incomplete part.
 
 	if err != nil {
 		log.Fatalf("Error querying the dynamoDB location table, exiting: %v", err)
 	}
 
 	errCounter := 0
+
 	for _, value := range cfs {
 
 		// 2. For each value returned from Dynamo, check and see if it exists in Mongo.
-		locationResult, err := mgo.QueryLocationCFSMongo(value, config.Mgo)
+		locationResult, err := mgo.QueryLocationCFSMongo(value, config.Mgo) // Mongo will store the location data only, it matches on the Location (e.g., 4300 POTOMAC)
 
 		if err != nil {
 			errCounter += 1
@@ -57,7 +59,8 @@ func main() {
 			patchRecordSuccess := checkGoodLocation(locationResult)
 			if patchRecordSuccess {
 				// 3. If Mongo had a good value, path the original DynamoDB record and move on
-				err = dynamo.PatchRawDynamoSuccess(config.DynDB, value, locationResult)
+				updatedCfs := updateCFS(value, locationResult)
+				err = dynamo.PatchRawDynamoSuccess(config.DynDB, updatedCfs)
 				if err != nil {
 					errCounter += 1
 					log.Printf("Error marking issue with CFS record: %v", err)
@@ -101,13 +104,14 @@ func main() {
 				break
 			}
 			// Update both values successfully.
-			err = dynamo.PatchRawDynamoSuccess(config.DynDB, value, locationResult)
+			// err = dynamo.PatchRawDynamoSuccess(config.DynDB, improvedCfs, locationResult)
+			err = dynamo.PatchRawDynamoSuccess(config.DynDB, improvedCfs)
 
 			if err != nil {
 				errCounter += 1
-				log.Printf("Error updating Raw dynamo record after succes: %v", err)
+				log.Printf("Error updating Raw dynamo record after success: %v", err)
 			}
-
+			log.Printf("Calling updateCFSMongoSuccess with value: %v", improvedCfs)
 			err = mgo.UpdateCFSMongoSuccess(improvedCfs, config.Mgo)
 
 			if err != nil {
@@ -119,8 +123,12 @@ func main() {
 
 	}
 
-	log.Printf("Successfully processed %v with %v errors.", len(cfs), errCounter)
+	if (len(cfs)) == 0 {
+		log.Println("No new items from CFS, shutting down.")
+	}
 
+	log.Printf("Successfully processed %v with %v errors.", len(cfs), errCounter)
+	log.Println("Shutting down CFS-Geocode...")
 }
 
 func checkGoodLocation(lr dynamo.LocationFixed) bool {
@@ -131,4 +139,23 @@ func checkGoodLocation(lr dynamo.LocationFixed) bool {
 	}
 
 	return good
+}
+
+func updateCFS(cfs dynamo.CFS, locationResult dynamo.LocationFixed) dynamo.CFS {
+
+	updatedCFS := dynamo.CFS{}
+
+	updatedCFS.TimeOfCall = cfs.TimeOfCall
+	updatedCFS.EventID = cfs.EventID
+	updatedCFS.Location = cfs.Location
+	updatedCFS.CallReason = cfs.CallReason
+	updatedCFS.LatLong = locationResult.LatLong
+	updatedCFS.Ward = locationResult.Ward
+	updatedCFS.NeighborhoodLong = locationResult.NeighborhoodLong
+	updatedCFS.NeighborhoodShort = locationResult.NeighborhoodShort
+	updatedCFS.Zipcode = locationResult.Zipcode
+	updatedCFS.Complete = cfs.Complete
+	updatedCFS.HasIssue = cfs.HasIssue
+
+	return updatedCFS
 }

@@ -20,18 +20,21 @@ func Connect(user string, pw string, host string) (client *mongo.Client, err err
 
 	ctx := context.TODO()
 
+	log.Println("Attempting to connect to Mongo...")
 	client, err = mongo.Connect(ctx, mongoClient.ApplyURI(host))
 
 	if err != nil {
 		log.Fatalf("Error while attempting to connect to Mongo DB: %v", err)
 
 	}
-
+	log.Println("Connected to mongo")
+	log.Println("pinging mongo")
 	err = client.Ping(ctx, nil)
 
 	if err != nil {
 		log.Fatalf("Unable to ping Mongo")
 	}
+	log.Println("pinged mongo")
 
 	return client, err
 }
@@ -44,6 +47,9 @@ func QueryLocationCFSMongo(cfs dynamo.CFS, client *mongo.Client) (locationResult
 		"location": bson.M{"$eq": cfs.Location},
 		"hasIssue": bson.M{"$eq": false},
 	}
+
+	log.Println(query)
+	log.Println(cfs.Location)
 
 	result := collection.FindOne(context.TODO(), query)
 

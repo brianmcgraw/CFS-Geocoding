@@ -32,6 +32,7 @@ type MapsResults struct {
 	AddressComponents []AddressComponent `json:"address_components"`
 	FormattedAddress  string             `json:"formatted_address"`
 	Geometry          MapsGeometry       `json:"geometry"`
+	PlaceId           string             `json:"place_id"`
 	Types             []string           `json:"types"`
 }
 
@@ -100,6 +101,8 @@ func CallMaps(mapsConfig MapsConfig, raw dynamo.CFS) (improved dynamo.CFS, err e
 
 	err = json.NewDecoder(resp.Body).Decode(&mapsResponse)
 
+	log.Println(mapsResponse)
+
 	if err != nil {
 		err = fmt.Errorf("Error decoding google maps api response: %v", err)
 		return improved, err
@@ -122,7 +125,12 @@ func CallMaps(mapsConfig MapsConfig, raw dynamo.CFS) (improved dynamo.CFS, err e
 
 	improved.LatLong.Lat = latFloat
 	improved.LatLong.Lng = lngFloat
+	improved.TimeOfCall = raw.TimeOfCall
+	improved.EventID = raw.EventID
+	improved.Location = raw.Location
+	improved.CallReason = raw.CallReason
 
+	log.Println(improved, " is the value")
 	return improved, err
 
 }
@@ -134,6 +142,7 @@ func NormalizeAddress(s string) (f string) {
 
 func buildURL(url *url.URL, s string, k string) *url.URL {
 	q := url.Query()
+	s = s + ",Saint+Louis,+MO"
 	q.Set("address", s)
 	q.Set("key", k)
 	url.RawQuery = q.Encode()

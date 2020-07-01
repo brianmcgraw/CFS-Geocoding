@@ -2,3 +2,7 @@ aws.txt
 result.csv
 env.list
 .vscode
+main.go
+test.sh
+dc.yaml
+launch.json

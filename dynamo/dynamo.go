@@ -1,6 +1,7 @@
 package dynamo
 
 import (
+	"log"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -10,7 +11,7 @@ import (
 )
 
 const (
-	BaseDataTable          = "cfs-new"
+	BaseDataTable          = "cfs-neww"
 	FixedLocationDataTable = "cfs-location-fixed"
 )
 
@@ -47,7 +48,7 @@ type LatLong struct {
 }
 
 func QueryIncompleteCFS(session *dyn.DynamoDB) (cfs []CFS, err error) {
-
+	log.Println("Querying cfs")
 	input := &dynamodb.ScanInput{
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":v1": {
@@ -128,38 +129,41 @@ func PatchRawDynamoFailure(session *dyn.DynamoDB, cfs CFS) (err error) {
 	return err
 }
 
-func PatchRawDynamoSuccess(session *dyn.DynamoDB, cfs CFS, locationRecord LocationFixed) (err error) {
+func PatchRawDynamoSuccess(session *dyn.DynamoDB, cfs CFS) (err error) {
 	// TODO, fix the handling of nexted object in dynamodb
+
+	// log.Println(locationRecord)
+
 	input := &dynamodb.UpdateItemInput{
 		ExpressionAttributeNames: map[string]*string{
-			"#a":  aws.String("latlng"),
+			"#a":  aws.String("latlong"),
 			"#aa": aws.String("lat"),
 			"#ab": aws.String("lng"),
-			"#b":  aws.String("ward"),
-			"#c":  aws.String("neighborhoodLong"),
-			"#d":  aws.String("neighborhoodShort"),
-			"#e":  aws.String("zipcode"),
-			"#f":  aws.String("complete"),
-			"#g":  aws.String("hasIssue"),
+			// "#b":  aws.String("ward"),
+			"#c": aws.String("neighborhoodLong"),
+			"#d": aws.String("neighborhoodShort"),
+			"#e": aws.String("zipcode"),
+			"#f": aws.String("complete"),
+			"#g": aws.String("hasIssue"),
 		},
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":aa": {
-				N: aws.String(locationRecord.LatLong.Lat),
+				N: aws.String(cfs.LatLong.Lat),
 			},
 			":ab": {
-				N: aws.String(locationRecord.LatLong.Lng),
+				N: aws.String(cfs.LatLong.Lng),
 			},
-			":b": {
-				S: aws.String(locationRecord.Ward),
-			},
+			// ":b": {
+			// 	S: aws.String(cfs.Ward),
+			// },
 			":c": {
-				S: aws.String(locationRecord.NeighborhoodLong),
+				S: aws.String(cfs.NeighborhoodLong),
 			},
 			":d": {
-				S: aws.String(locationRecord.NeighborhoodShort),
+				S: aws.String(cfs.NeighborhoodShort),
 			},
 			":e": {
-				S: aws.String(locationRecord.Zipcode),
+				S: aws.String(cfs.Zipcode),
 			},
 			":f": {
 				BOOL: &boolPtrTrue,
@@ -174,10 +178,17 @@ func PatchRawDynamoSuccess(session *dyn.DynamoDB, cfs CFS, locationRecord Locati
 			},
 		},
 		TableName:        aws.String(BaseDataTable),
-		UpdateExpression: aws.String("SET #a.#aa = :aa, #a.#ab = :ab, #b = :b, #c = :c, #d = :d, #e = :e, #f = :f, #g = :g"),
+		UpdateExpression: aws.String("SET #a.#aa = :aa, #a.#ab = :ab, #c = :c, #d = :d, #e = :e, #f = :f, #g = :g"),
 	}
+	inputErr := input.Validate()
 
-	_, err = session.UpdateItem(input)
+	log.Println(inputErr)
+
+	output, err := session.UpdateItem(input)
+
+	log.Println(output)
+
+	log.Println(err)
 
 	return err
 }
