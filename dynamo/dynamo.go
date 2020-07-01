@@ -148,10 +148,10 @@ func PatchRawDynamoSuccess(session *dyn.DynamoDB, cfs CFS) (err error) {
 		},
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":aa": {
-				N: aws.String(cfs.LatLong.Lat),
+				S: aws.String(cfs.LatLong.Lat),
 			},
 			":ab": {
-				N: aws.String(cfs.LatLong.Lng),
+				S: aws.String(cfs.LatLong.Lng),
 			},
 			// ":b": {
 			// 	S: aws.String(cfs.Ward),

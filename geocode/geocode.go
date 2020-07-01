@@ -142,8 +142,8 @@ func NormalizeAddress(s string) (f string) {
 
 func buildURL(url *url.URL, s string, k string) *url.URL {
 	q := url.Query()
-	s = s + ",Saint+Louis,+MO"
-	q.Set("address", s)
+	fixedString := s + "+SAINT+LOUIS+MO"
+	q.Set("address", fixedString)
 	q.Set("key", k)
 	url.RawQuery = q.Encode()
 	return url
